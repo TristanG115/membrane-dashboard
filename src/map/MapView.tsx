@@ -1,6 +1,7 @@
 import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource, MapMouseEvent } from 'maplibre-gl'
-import { Protocol } from 'pmtiles'
+import { PMTiles, Protocol } from 'pmtiles'
+import { WholeFileSource } from './wholeFileSource'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -41,6 +42,7 @@ export function MapView() {
   useEffect(() => {
     maplibregl.setWorkerUrl(workerUrl)
     const protocol = new Protocol()
+    for (const f of ['conus', 'inoh']) { const u = `${origin}tiles/${f}.pmtiles`; protocol.add(new PMTiles(new WholeFileSource(u))) }
     maplibregl.addProtocol('pmtiles', protocol.tile)
     const map = new maplibregl.Map({
       container: box.current!, style: baseStyle(origin), center: CAMERAS.conus.center, zoom: CAMERAS.conus.zoom,

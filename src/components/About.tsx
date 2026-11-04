@@ -3,11 +3,16 @@ import { SIM_BADGE } from '../config/scenario'
 import { useStore } from '../store'
 
 const REAL: [string, string, string][] = [
-  ['Basemap: land, water, rivers, roads, places', 'OpenStreetMap contributors via Protomaps daily build (2026-11-01), extracted to Indiana/Ohio and the continental US', 'https://docs.protomaps.com/basemaps/downloads'],
+  ['Basemap: land, water, rivers, roads, places', 'OpenStreetMap contributors via the Protomaps daily build of 2026-11-03, pruned to what this map draws and split into three self-hosted files: US (z0-5), Indiana/Ohio (z6-10) and central Indiana detail (z11-12)', 'https://docs.protomaps.com/basemaps/downloads'],
   ['State boundaries, county shapes', 'US Census Bureau cartographic boundary files, 2023', 'https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html'],
   ['Power plant locations (Indiana)', 'EIA-860 as republished in the Indiana GIS “Power Plants 2023” layer (gisdata.in.gov)', 'https://gisdata.in.gov/server/rest/services/Hosted/Power_Plants_2023/FeatureServer'],
   ['AES Indiana plant capacities and status', 'AES Indiana IURC filings (SRF 2025, WRF 2024) and Pike County fact sheet (Aug 2024)', 'https://secure.in.gov/iurc/files/9.-AES-Indiana-SRF-Presentation-2025.pdf'],
-  ['Stress hours per year (about 85)', 'Duke University, 2025: 0.25% curtailment case', 'https://nicholasinstitute.duke.edu/'],
+  ['Stress hours per year (about 85)', 'Duke University Nicholas Institute, Rethinking Load Growth (Feb 2025): 0.25% curtailment case, as reported by Facilities Dive', 'https://www.facilitiesdive.com/news/us-grid-headroom-flexible-load-data-center-ai-ev-duke-report/739938/'],
+  ['Google data center in Monrovia, Morgan County (IURC Cause No. 46394)', 'IURC approval of AES Indiana plan on 7 Oct 2026, 390 MW, $737.3M, $73.8M of network upgrades in rate base. Read through press accounts; the order itself was not read', 'https://mgrid.org/2026/10/10/indiana-approves-aess-plan-for-googles-390-mw-monrovia-data-center-and-puts-73-8-million-of-upgrades-in-rate-base/'],
+  ['Indiana HEA 1007 (2025): 80% cost-coverage test for large loads', 'As applied by the IURC in Cause No. 46394, via press accounts', 'https://mgrid.org/2026/10/10/indiana-approves-aess-plan-for-googles-390-mw-monrovia-data-center-and-puts-73-8-million-of-upgrades-in-rate-base/'],
+  ['MISO capacity price ($126.19/MW-day annualized, 2026/27)', 'MISO Planning Resource Auction results posted 28 Apr 2026, via Enel North America summary', 'https://www.enelnorthamerica.com/insights/blogs/miso-2026-2027-capacity-auction-results'],
+  ['Data center lease rates ($184/kW-month, CBRE H1 2025)', 'CBRE average asking rate for 250-500 kW deployments, via Data Center Knowledge', 'https://www.datacenterknowledge.com/colocation/power-not-space-the-colocation-battleground-in-2026'],
+  ['Hyperscaler flexibility evidence (Google, Emerald AI, SPP CHILLS, PJM, MISO)', 'Listed with dates, caveats and links on the Service Agreement tab', 'https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/demand-response-data-center-milestone/'],
 ]
 const APPROX = [
   'AES Indiana and AES Ohio territories are approximate unions of counties, not the legal service-territory boundary.',
@@ -23,6 +28,8 @@ const SIMULATED = [
   'Weather',
   'The fleet of Membrane sites (every name is fictional) and interconnection requests',
   'Ledger entries and meter matches',
+  'Every economics result: cash flows, NPV, IRR and break-even come from team assumptions marked on the Economics tab, not from AES or data center financials',
+  'The forecaster, its calibration backtest and its driver attribution',
 ]
 
 export function About() {

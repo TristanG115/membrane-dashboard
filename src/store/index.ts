@@ -16,7 +16,7 @@ export const TABS: { id: TabId; label: string; short: string; ready: boolean }[]
   { id: 'dispatch', label: 'Site Dispatch', short: 'Dispatch', ready: true },
   { id: 'agreement', label: 'Service Agreement', short: 'Agreement', ready: true },
   { id: 'economics', label: 'Economics', short: 'Economics', ready: true },
-  { id: 'forecaster', label: 'Headroom Forecaster', short: 'Forecaster', ready: false },
+  { id: 'forecaster', label: 'Headroom Forecaster', short: 'Forecaster', ready: true },
   { id: 'scorecard', label: 'Pilot Scorecard', short: 'Scorecard', ready: false },
   { id: 'markets', label: 'Market Models', short: 'Markets', ready: false },
   { id: 'requests', label: 'Interconnection', short: 'Requests', ready: false },

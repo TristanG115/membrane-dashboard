@@ -437,3 +437,19 @@ body.phone .numin { width: 96px; min-height: 40px; font-size: 16px; }
 
 .inspect { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; padding: 0 2px 4px; min-height: 22px; }
 .inspect b { color: #f0d77e; font-weight: 600; }
+
+/* forecaster */
+.fc-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.linkish { color: #9fb4f5; text-decoration: underline; }
+.drivers { display: grid; gap: 7px; margin: 8px 0 4px; }
+.driver { display: grid; grid-template-columns: 1fr 64px; gap: 2px 8px; align-items: center; }
+.driver .dl { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 12.5px; }
+.driver .db { position: relative; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+.driver .db i { position: absolute; top: 0; height: 100%; }
+.driver .db b { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--text-faint); }
+.driver .dv { text-align: right; font-size: 12.5px; }
+.inputs { display: grid; gap: 2px; }
+.in-row { display: grid; grid-template-columns: 1fr 70px 96px; gap: 10px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.in-row b { text-align: right; font-weight: 500; }
+@media (max-width: 1300px) { .fc-grid { grid-template-columns: minmax(0, 1fr); } }
+body.phone .fc-grid { grid-template-columns: minmax(0, 1fr); }

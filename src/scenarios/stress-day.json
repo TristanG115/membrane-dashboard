@@ -1,0 +1,30 @@
+{
+  "id": "stress-day",
+  "name": "Summer Stress Day",
+  "description": "The canonical 140 MW story: a 4 PM–8 PM stress event removes spare capacity. The battery covers 40 MW and only 10 MW of AI training is paused. Inference is never touched.",
+  "group": "story",
+  "seed": 4101,
+  "start": "06:00",
+  "weather": { "tempPeakF": 97, "windMph": 6 },
+  "alerts": [["00:00", 0], ["13:00", 1], ["15:30", 2], ["17:30", 3], ["20:00", 0]],
+  "headroom": {
+    "*": [["00:00", 95], ["06:00", 92], ["12:00", 88], ["15:00", 75], ["15:55", 60], ["16:05", 12], ["17:25", 12], ["17:30", 0], ["20:00", 0], ["20:20", 70], ["22:00", 92], ["24:00", 95]]
+  },
+  "levelFlexFrac": { "3": 1, "4": 0.5, "5": 0 },
+  "affected": "all",
+  "initialSoc": 0.8,
+  "beats": [
+    { "t": "06:00", "title": "Normal operations", "text": "Flexible jobs run on grid headroom. Firm load is always served.", "severity": "info", "phase": "predict", "camera": { "flyTo": "indiana" } },
+    { "t": "13:00", "title": "MISO Capacity Advisory", "text": "The forecaster sees a stress window ahead. Sites pre-position: batteries charge to 100% and the deferral queue is built.", "severity": "warn", "phase": "prepare", "camera": { "flyTo": "metro", "fleetPanel": true } },
+    { "t": "15:30", "title": "Conservative Operations", "text": "Flexible ramp-up is capped across the fleet.", "severity": "warn", "phase": "prepare" },
+    { "t": "16:05", "title": "P10 headroom below flexible demand", "text": "Hoosier Compute Campus: battery discharges 40 MW to hold the 50 MW of flexible work.", "severity": "warn", "phase": "react", "camera": { "openSite": "hoosier" } },
+    { "t": "17:30", "title": "Max Gen Alert", "text": "10 MW of AI training checkpoints and pauses. Inference is untouched and firm 90 MW holds.", "severity": "alert", "phase": "react", "camera": { "openSite": "hoosier" } },
+    { "t": "20:00", "title": "All clear", "text": "Paused jobs resume. Batteries begin their overnight recharge.", "severity": "ok", "phase": "recover" }
+  ],
+  "callouts": [
+    { "from": "09:00", "until": "13:00", "text": "Stress window 16:00–20:00 likely (82%)", "tone": "warn", "tab": "forecaster", "t": "16:00" },
+    { "from": "12:30", "until": "16:05", "text": "P10 headroom falls below flexible demand at 16:05 — battery pre-charge 100%", "tone": "warn", "tab": "dispatch", "t": "15:55" },
+    { "from": "14:00", "until": "17:30", "text": "Max Gen Alert probable after 17:00", "tone": "warn", "tab": "map", "t": "17:00" },
+    { "from": "17:30", "until": "20:00", "text": "Max Gen Alert active: 10 MW of training paused, inference untouched", "tone": "alert", "tab": "dispatch", "t": "17:30" }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "telemetry-loss",
+  "name": "Telemetry Loss",
+  "description": "A normal day. The Membrane link to the 140 MW site drops while it draws 140 MW. The on-site controller falls back to 90 MW firm within its ramp cap while the grid keeps serving the site.",
+  "group": "story",
+  "seed": 4103,
+  "start": "10:55",
+  "weather": { "tempPeakF": 84, "windMph": 9 },
+  "alerts": [["00:00", 0]],
+  "headroom": { "*": [["00:00", 95], ["24:00", 95]] },
+  "affected": [],
+  "initialSoc": 0.8,
+  "linkLoss": [{ "site": "hoosier", "from": "11:00", "to": "11:25" }],
+  "beats": [
+    { "t": "10:55", "title": "Normal operations", "text": "The site draws 140 MW: 90 firm and 50 flexible on grid headroom.", "severity": "info", "phase": "predict", "camera": { "flyTo": "metro", "openSite": "hoosier" } },
+    { "t": "11:00", "title": "Membrane link lost", "text": "Controller detects the loss and ramps to the 90 MW firm limit. Grid service is uninterrupted.", "severity": "warn", "phase": "react" },
+    { "t": "11:25", "title": "Link restored", "text": "Buffered ledger entries backfill and the hash chain still verifies. The site ramps back up within its caps.", "severity": "ok", "phase": "recover" }
+  ],
+  "callouts": [
+    { "from": "10:55", "until": "11:00", "text": "Simulated telemetry loss in 5 minutes", "tone": "info", "tab": "dispatch", "t": "11:00" }
+  ]
+}

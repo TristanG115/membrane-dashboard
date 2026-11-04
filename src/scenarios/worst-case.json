@@ -1,0 +1,25 @@
+{
+  "id": "worst-case",
+  "name": "Worst Case: Comms Lost at Peak",
+  "description": "Mid-event at 17:45 with the battery already partly drained, the Membrane link drops. The local controller ramps to the 90 MW firm limit within its ramp cap while the battery bridges the step. The grid sees a smooth decline, not a cliff.",
+  "group": "story",
+  "seed": 4104,
+  "start": "17:40",
+  "weather": { "tempPeakF": 98, "windMph": 5 },
+  "alerts": [["00:00", 0], ["13:00", 1], ["15:30", 2], ["17:30", 3], ["20:00", 0]],
+  "headroom": {
+    "*": [["00:00", 95], ["06:00", 92], ["12:00", 88], ["15:00", 75], ["15:55", 60], ["16:05", 12], ["18:30", 12], ["18:35", 0], ["20:00", 0], ["20:20", 70], ["22:00", 92], ["24:00", 95]]
+  },
+  "levelFlexFrac": { "3": 1, "4": 0.5, "5": 0 },
+  "affected": "all",
+  "initialSoc": 0.8,
+  "linkLoss": [{ "site": "hoosier", "from": "17:45", "to": "18:15" }],
+  "beats": [
+    { "t": "17:40", "title": "Mid-event", "text": "Battery covering 40 MW, about 56% charge left. Grid flexible draw is 10 MW.", "severity": "alert", "phase": "react", "camera": { "flyTo": "metro", "openSite": "hoosier" } },
+    { "t": "17:45", "title": "Comms lost at 17:45", "text": "The on-site controller detects the loss and starts the ramp to firm. No cloud dependency.", "severity": "alert", "phase": "react", "camera": { "tab": "dispatch" } },
+    { "t": "18:15", "title": "Link restored", "text": "The site holds at firm until the P10 forecast allows flexible load again.", "severity": "ok", "phase": "recover" }
+  ],
+  "callouts": [
+    { "from": "17:30", "until": "17:45", "text": "Worst case staged: comms lost at 17:45, battery already partly drained", "tone": "alert", "tab": "dispatch", "t": "17:45" }
+  ]
+}

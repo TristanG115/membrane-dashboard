@@ -9,6 +9,7 @@ import type { PlantProps } from '../map/geo'
 import { fmtClock, fmtDuration } from '../sim/time'
 import { useStore } from '../store'
 import { StateBadge } from './FleetPanel'
+import { SheetHandle } from './PhoneChrome'
 
 export function Drawer() {
   const { drawer, openDrawer } = useStore()
@@ -18,7 +19,8 @@ export function Drawer() {
   }, [])
   if (!drawer) return null
   return (
-    <aside className="drawer" aria-label="Asset detail">
+    <aside className="drawer" data-sheet data-snap="half" aria-label="Asset detail">
+      <SheetHandle onClose={() => openDrawer(null)} />
       <button onClick={() => openDrawer(null)} aria-label="Close detail" style={{ position: 'absolute', right: 10, top: 10, zIndex: 2 }}><X size={16} /></button>
       {drawer.kind === 'site' && <SiteDetail id={drawer.id} />}
       {drawer.kind === 'plant' && plants.get(drawer.id) && <PlantDetail p={plants.get(drawer.id)!} />}

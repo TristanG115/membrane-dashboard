@@ -4,14 +4,14 @@ import { useWidth } from '../lib/useSize'
 import { fmtM } from '../lib/money'
 
 export interface SankeyLink { source: string; target: string; value: number; label: string; color: string }
-export interface SankeyNodeDef { id: string; name: string; color: string }
+export interface SankeyNodeDef { id: string; name: string; color: string; short?: string }
 
 /** Flows of money between parties for one scenario. Labels sit on the nodes; each link names its stream on hover or tap. */
 export function Sankey({ nodes, links, height = 340 }: { nodes: SankeyNodeDef[]; links: SankeyLink[]; height?: number }) {
   const [ref, w] = useWidth<HTMLDivElement>()
   const [hover, setHover] = useState<number | null>(null)
   const narrow = w < 560
-  const padL = narrow ? 84 : 170, padR = narrow ? 96 : 200
+  const padL = narrow ? 74 : 170, padR = narrow ? 88 : 200
   const graph = useMemo(() => {
     const used = new Set(links.flatMap((l) => [l.source, l.target]))
     const ns = nodes.filter((n) => used.has(n.id)).map((n) => ({ ...n }))
@@ -35,7 +35,7 @@ export function Sankey({ nodes, links, height = 340 }: { nodes: SankeyNodeDef[];
           return (
             <g key={n.id}>
               <rect x={n.x0} y={n.y0} width={(n.x1 ?? 0) - (n.x0 ?? 0)} height={Math.max(2, (n.y1 ?? 0) - (n.y0 ?? 0))} fill={n.color} rx={2} />
-              <text x={tx} y={cy - 3} textAnchor={left ? 'end' : 'start'} fontSize={font} fill="#e6ecf7">{n.name}</text>
+              <text x={tx} y={cy - 3} textAnchor={left ? 'end' : 'start'} fontSize={font} fill="#e6ecf7">{narrow ? n.short ?? n.name : n.name}</text>
               <text x={tx} y={cy + 12} textAnchor={left ? 'end' : 'start'} fontSize={font - 1} fill="#9aa8c2" className="num">{fmtM(n.value ?? 0)}</text>
             </g>
           )

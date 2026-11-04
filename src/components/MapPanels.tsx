@@ -7,12 +7,14 @@ import { currentBeat, fleetSummary } from '../lib/snapshot'
 import { SCENARIOS } from '../sim/registry'
 import { fmtClock, parseTime } from '../sim/time'
 import { LAYER_DEFS, useStore } from '../store'
+import { isPhone } from '../lib/phoneQuery'
+import { SheetHandle } from './PhoneChrome'
 
 export function LayerPanel() {
   const { layers, toggleLayer, role } = useStore()
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(() => window.innerWidth >= 1100 && !isPhone()) // collapsed on phones and portrait tablets so it does not cover sites
   return (
-    <div className="panel" style={{ left: 12, top: 56, width: 218 }}>
+    <div className="panel p-layers" style={{ left: 12, top: 56, width: 218 }}>
       <div className="hd"><h3>Layers</h3><button onClick={() => setOpen(!open)} aria-label="Toggle layer panel">{open ? <CaretUp size={14} /> : <CaretDown size={14} />}</button></div>
       {open && (
         <div className="bd">
@@ -45,7 +47,7 @@ export function SearchBox() {
   ], [fireCue, openDrawer])
   const hits = q.trim().length < 2 ? [] : index.filter((i) => i.label.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6)
   return (
-    <div className="panel" style={{ left: 12, top: 10, width: 218, padding: 0 }}>
+    <div className="panel p-search" style={{ left: 12, top: 10, width: 218, padding: 0 }}>
       <label className="row" style={{ padding: '6px 9px', gap: 6 }}>
         <MagnifyingGlass size={15} color="#9aa8c2" aria-hidden />
         <input aria-label="Search the map" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Morgan County, Petersburg…" style={{ background: 'none', border: 0, color: 'var(--text)', font: 'inherit', width: '100%', outline: 'none' }}
@@ -72,7 +74,7 @@ export function BeatBanner() {
   if (!b) return null
   const phases: [string, string][] = [['predict', 'Predict'], ['prepare', 'Prepare'], ['react', 'React'], ['recover', 'Recover']]
   return (
-    <div style={{ position: 'absolute', left: 150, right: drawer ? 392 : 12, bottom: 10, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 15, transition: 'right 0.25s ease' }}>
+    <div className="p-banner" style={{ position: 'absolute', left: 150, right: drawer ? 392 : 12, bottom: 10, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 15, transition: 'right 0.25s ease' }}>
       <div className="banner" role="status" aria-live="polite">
         <div className="phases">{phases.map(([k, l]) => <span key={k} className={`phase ${b.phase === k ? 'on' : ''}`}>{l}</span>)}</div>
         <div><div className="t">{fmtClock(parseTime(b.t), false)} · {b.title}</div><div className="x">{b.text}</div></div>
@@ -87,9 +89,10 @@ export function EventLab() {
   const go = (id: string) => { setScenario(id); setPlaying(true) }
   return (
     <>
-      <button className="ghost panel" style={{ left: 238, top: 10, padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => setEventLab(!eventLab)} aria-expanded={eventLab}><Flask size={15} /> Event Lab</button>
+      <button className="ghost panel p-eventbtn" style={{ left: 238, top: 10, padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => setEventLab(!eventLab)} aria-expanded={eventLab}><Flask size={15} /> Event Lab</button>
       {eventLab && (
-        <div className="panel" style={{ left: 238, top: 48, width: 330 }}>
+        <div className="panel eventp" data-sheet data-snap="half" style={{ left: 238, top: 48, width: 330 }}>
+          <SheetHandle onClose={() => setEventLab(false)} />
           <div className="hd"><h3>Event Lab</h3><button onClick={() => setEventLab(false)} aria-label="Close"><X size={14} /></button></div>
           <div className="bd">
             <div className="dim" style={{ fontSize: 12, marginBottom: 6 }}>One-click scenarios. Each plays Predict → Prepare → React → Recover.</div>
@@ -114,7 +117,7 @@ export function Legend() {
   const { tl, t } = useStore()
   const counts = useMemo(() => fleetSummary(tl, t).counts, [tl, t])
   return (
-    <div className="panel" style={{ left: 12, bottom: 10, width: open ? 460 : 'auto', maxHeight: '64%', overflowY: 'auto' }}>
+    <div className="panel p-legend" style={{ left: 12, bottom: 10, width: open ? 460 : 'auto', maxHeight: '64%', overflowY: 'auto' }}>
       <div className="hd" style={{ gap: 14 }}><h3>Legend</h3><button onClick={() => setOpen(!open)} aria-label="Toggle legend" aria-expanded={open}>{open ? <CaretDown size={14} /> : <CaretUp size={14} />}</button></div>
       {open && (
         <div className="bd" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 16 }}>

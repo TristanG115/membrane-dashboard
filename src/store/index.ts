@@ -3,6 +3,7 @@ import { FLEET } from '../config/scenario'
 import { DEFAULT_SCENARIO, SCENARIOS, getTimeline } from '../sim/registry'
 import { buildTimeline } from '../sim/engine'
 import { fmtClock, parseTime } from '../sim/time'
+import { isPhone } from '../lib/phoneQuery'
 import { defaultInputs, type Inputs, type Ownership } from '../economics/model'
 import type { CameraCue, Severity, TabId, Timeline } from '../sim/types'
 
@@ -53,6 +54,12 @@ interface UIState {
   toasts: Toast[]
   camera: { seq: number; cue: CameraCue }
   injected: boolean
+  phone: boolean
+  sheet: 'conditions' | 'more' | 'scenarios' | null
+  intro: boolean
+  setPhone: (v: boolean) => void
+  setSheet: (s: 'conditions' | 'more' | 'scenarios' | null) => void
+  setIntro: (v: boolean) => void
   econ: Inputs
   ownership: Exclude<Ownership, 'utility'>
   setEcon: (patch: Inputs) => void
@@ -101,6 +108,7 @@ const wantTab = (params.get('tab') as TabId | null) ?? tabFromHash() ?? 'map'
 const wantRole = (['operator', 'regulator', 'public'] as const).find((r) => r === params.get('role')) ?? 'operator'
 
 let seq = 0
+const startPhone = isPhone()
 export const useStore = create<UIState>((set, get) => ({
   scenarioId: initialId,
   tl: initialTl,
@@ -109,7 +117,7 @@ export const useStore = create<UIState>((set, get) => ({
   playing: params.get('autoplay') === '1',
   tab: TABS.some((t) => t.id === wantTab) ? wantTab : 'map',
   role: wantRole,
-  layers: Object.fromEntries(LAYER_DEFS.map((l) => [l.id, true])),
+  layers: Object.fromEntries(LAYER_DEFS.map((l) => [l.id, !(startPhone && l.id === 'demand')])), // hex layer is off by default on phones
   drawer: params.get('site') && FLEET.some((f) => f.id === params.get('site')) ? { kind: 'site', id: params.get('site')! } : null,
   fleetPanel: params.get('fleet') === '1',
   eventLab: false,
@@ -118,6 +126,12 @@ export const useStore = create<UIState>((set, get) => ({
   toasts: [],
   camera: { seq: 0, cue: {} },
   injected: false,
+  phone: startPhone,
+  sheet: null,
+  intro: startPhone && !window.location.search && !window.location.hash,
+  setPhone: (phone) => set({ phone }),
+  setSheet: (sheet) => set({ sheet }),
+  setIntro: (intro) => set({ intro }),
   econ: defaultInputs(),
   ownership: 'developer',
   setEcon: (patch) => set({ econ: { ...get().econ, ...patch } }),
@@ -174,7 +188,7 @@ export const useStore = create<UIState>((set, get) => ({
   fireCue: (cue) => {
     if (cue.tab) get().setTab(cue.tab)
     if (cue.openSite) set({ drawer: { kind: 'site', id: cue.openSite } })
-    if (cue.fleetPanel !== undefined) set({ fleetPanel: cue.fleetPanel })
+    if (cue.fleetPanel !== undefined && !(cue.fleetPanel && get().phone)) set({ fleetPanel: cue.fleetPanel }) // a sheet would cover the map mid-story on a phone
     set({ camera: { seq: ++seq, cue } })
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),

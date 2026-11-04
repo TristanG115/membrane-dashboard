@@ -4,6 +4,7 @@ import { FLEET, STATE_META, STATE_ORDER } from '../config/scenario'
 import { STATE_ICON } from '../map/glyphs'
 import { fleetSummary, siteAt } from '../lib/snapshot'
 import { useStore } from '../store'
+import { SheetHandle } from './PhoneChrome'
 
 export function StateBadge({ state, size = 18 }: { state: keyof typeof STATE_META; size?: number }) {
   const I = STATE_ICON[state]
@@ -20,7 +21,8 @@ export function FleetPanel() {
     ? `${nSites} sites · ${Math.round(ev.released)} MW of flexible load released to the grid in ${ev.headlineS} s`
     : `${nSites} contracted sites · ${Math.round(sum.flexAvail)} MW of flexible load running`
   return (
-    <div className="panel" style={{ right: drawer ? 392 : 12, top: 10, width: 356, transition: 'right 0.25s ease', zIndex: 12 }}>
+    <div className="panel fleetp" data-sheet data-snap="half" style={{ right: drawer ? 392 : 12, top: 10, width: 356, transition: 'right 0.25s ease', zIndex: 12 }}>
+      <SheetHandle onClose={() => setFleetPanel(false)} />
       <div className="hd"><h3>Fleet</h3><button onClick={() => setFleetPanel(false)} aria-label="Close fleet panel"><X size={14} /></button></div>
       <div className="bd">
         <div style={{ fontSize: 15, fontWeight: 500, lineHeight: 1.25, marginBottom: 8 }} className="num">{headline}</div>

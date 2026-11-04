@@ -2,7 +2,9 @@ import { lazy, Suspense, useEffect, useRef } from 'react'
 import { About } from './components/About'
 import { Toasts } from './components/Toasts'
 import { TopBar } from './components/TopBar'
+import { IntroCard, PhoneNav, PhoneTopBar, PhoneTransport } from './components/PhoneChrome'
 import { Transport } from './components/Transport'
+import { usePhoneLayout, useStackedTables } from './lib/phone'
 import { useKeys } from './lib/keys'
 import { MapTab } from './tabs/MapTab'
 import { Placeholder } from './tabs/Placeholder'
@@ -15,9 +17,11 @@ const ForecasterTab = lazy(() => import('./tabs/ForecasterTab').then((m) => ({ d
 import { startClock, TABS, urlParams, useStore } from './store'
 
 export default function App() {
-  const { tab, present } = useStore()
+  const { tab, present, phone } = useStore()
   const root = useRef<HTMLDivElement>(null)
   useKeys()
+  usePhoneLayout()
+  useStackedTables(root)
   useEffect(() => startClock(), [])
   useEffect(() => {
     // Deep links: an explicit view/site/intro choice wins over the scenario's opening camera cue.
@@ -49,8 +53,8 @@ export default function App() {
   }, [present])
   const ready = TABS.find((x) => x.id === tab)!.ready
   return (
-    <div ref={root} className={`app ${present ? 'present' : ''}`}>
-      <TopBar />
+    <div ref={root} className={`app ${present ? 'present' : ''} ${phone ? 'is-phone' : ''}`}>
+      {phone ? <PhoneTopBar /> : <TopBar />}
       <main className="main">
         <div style={{ position: 'absolute', inset: 0, display: tab === 'map' ? 'block' : 'none' }}><MapTab /></div>
         <Suspense fallback={<div className="page dim" style={{ display: 'grid', placeItems: 'center' }}>Loading view</div>}>
@@ -62,7 +66,9 @@ export default function App() {
         {tab !== 'map' && !ready && <Placeholder tab={tab} />}
         <Toasts corner={tab === 'map' ? 'left' : 'right'} />
       </main>
-      <Transport />
+      {phone ? <PhoneTransport /> : <Transport />}
+      {phone && <PhoneNav />}
+      <IntroCard />
       <About />
     </div>
   )

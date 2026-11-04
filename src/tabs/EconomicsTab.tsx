@@ -13,15 +13,15 @@ const OWN: { id: Ownership; title: string; line: string }[] = [
   { id: 'utility', title: 'Utility-owned in rate base', line: 'Greyed out on purpose. Ratepayers would carry the battery, which is the cost-shift HEA 1007 is written to stop.' },
 ]
 const NODES: SankeyNodeDef[] = [
-  { id: 'dc-contracts', name: 'Data center · contracts', color: '#5b6b88' },
-  { id: 'dc-bills', name: 'Data center · utility bills', color: '#5b6b88' },
-  { id: 'miso', name: 'MISO markets', color: '#5b6b88' },
-  { id: 'treasury', name: 'U.S. Treasury (§48E)', color: '#5b6b88' },
+  { id: 'dc-contracts', name: 'Data center · contracts', short: 'DC contracts', color: '#5b6b88' },
+  { id: 'dc-bills', name: 'Data center · utility bills', short: 'DC bills', color: '#5b6b88' },
+  { id: 'miso', name: 'MISO markets', short: 'MISO', color: '#5b6b88' },
+  { id: 'treasury', name: 'U.S. Treasury (§48E)', short: 'Treasury', color: '#5b6b88' },
   { id: 'aesIndiana', name: 'AES Indiana', color: '#6f8ce6' },
-  { id: 'aesUSRP', name: 'AES U.S. Renewables & Power', color: '#58aab4' },
+  { id: 'aesUSRP', name: 'AES U.S. Renewables & Power', short: 'AES USRP', color: '#58aab4' },
   { id: 'dataCenter', name: 'Data center', color: '#d4defc' },
   { id: 'ratepayers', name: 'Ratepayers', color: '#b58de0' },
-  { id: 'membrane', name: 'The Membrane', color: '#4f6fd6' },
+  { id: 'membrane', name: 'The Membrane', short: 'Membrane', color: '#4f6fd6' },
 ]
 const LINK_STYLE: Record<string, { label: string; color: string }> = {
   toll: { label: 'Storage-as-a-service payment', color: '#58aab4' },

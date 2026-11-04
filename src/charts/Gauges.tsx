@@ -7,7 +7,7 @@ export function SocGauge({ soc, mwh, mw, flow }: { soc: number; mwh: number; mw:
   const bg = a({ innerRadius: r - 14, outerRadius: r, startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })!
   const fg = a({ innerRadius: r - 14, outerRadius: r, startAngle: -Math.PI / 2, endAngle: -Math.PI / 2 + Math.PI * Math.min(1, Math.max(0, soc)) })!
   return (
-    <svg width="100%" viewBox="-100 -92 200 112" role="img" aria-label={`Battery state of charge ${Math.round(soc * 100)} percent`}>
+    <svg width="100%" style={{ maxWidth: 320, display: 'block', margin: '0 auto' }} viewBox="-100 -92 200 112" role="img" aria-label={`Battery state of charge ${Math.round(soc * 100)} percent`}>
       <path d={bg} fill="#0b1220" />
       <path d={fg} fill="#6fd39a" style={{ transition: 'd 0.3s' }} />
       <text y={-14} textAnchor="middle" fontSize={34} fontWeight={500} fill="#e6ecf7" className="num">{Math.round(soc * 100)}%</text>
@@ -23,7 +23,7 @@ export function RampMeter({ rate, cap }: { rate: number; cap: number }) {
   const v = Math.max(-1, Math.min(1, rate / cap))
   const over = Math.abs(rate) > cap * 1.02
   return (
-    <svg width="100%" viewBox={`0 0 ${w} 56`} role="img" aria-label={`Ramp rate ${rate.toFixed(2)} megawatts per second against a cap of ${cap}`}>
+    <svg width="100%" style={{ maxWidth: 420, display: 'block', margin: '0 auto' }} viewBox={`0 0 ${w} 56`} role="img" aria-label={`Ramp rate ${rate.toFixed(2)} megawatts per second against a cap of ${cap}`}>
       <rect x={0} y={20} width={w} height={14} rx={7} fill="#0b1220" />
       <rect x={mid + Math.min(0, v) * mid} y={20} width={Math.abs(v) * mid} height={14} rx={0} fill={over ? '#d9365e' : '#a9b0fe'} />
       <line x1={mid} x2={mid} y1={14} y2={40} stroke="#e6ecf7" />

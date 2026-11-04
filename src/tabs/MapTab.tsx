@@ -16,7 +16,7 @@ export function MapTab() {
       <Legend />
       <BeatBanner />
       {!fleetPanel && (
-        <button className="ghost panel" style={{ right: drawer ? 392 : 12, top: 10, padding: '6px 10px', display: 'flex', gap: 6, alignItems: 'center' }} onClick={() => setFleetPanel(true)}>
+        <button className="ghost panel p-fleetbtn" style={{ right: drawer ? 392 : 12, top: 10, padding: '6px 10px', display: 'flex', gap: 6, alignItems: 'center' }} onClick={() => setFleetPanel(true)}>
           <UsersThree size={15} /> Fleet
         </button>
       )}

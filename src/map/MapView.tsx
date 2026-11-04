@@ -13,6 +13,7 @@ import { allLineLoading, hexValues, lineLoading, plantPct, subHeadroomRatio } fr
 import { baseStyle, layerZoomRange, lineLayerIds, type Src } from './style'
 import { ArchiveSource, loadArchive, startTileLoads, subscribeTiles, tileStatus, TILE_URLS } from './tiles'
 import { TileChip } from './TileChip'
+import { isPhone } from '../lib/phoneQuery'
 
 const origin = `${window.location.origin}${import.meta.env.BASE_URL}`
 const DASH = [[0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0], [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5]]
@@ -20,6 +21,9 @@ const RTO_COLOR = ['match', ['get', 'name'], 'MISO', '#3f5ba9', 'PJM', '#7a62b3'
 const RTO_LABELS: [string, number, number][] = [['MISO', -92.6, 43.4], ['PJM', -79.4, 40.1], ['SPP', -98.4, 38.2], ['ERCOT', -98.9, 31.2], ['CAISO', -120.4, 37.2], ['NYISO', -75.6, 42.9], ['ISO-NE', -71.6, 42.5]]
 const lineW = (k: number) => ['interpolate', ['linear'], ['zoom'], 5, ['*', 0.5, ['case', ['==', ['get', 'kv'], 345], 2.6, ['==', ['get', 'feeder'], true], 1.4, 1.8]], 9, ['*', 1.1 * k, ['case', ['==', ['get', 'kv'], 345], 2.6, ['==', ['get', 'feeder'], true], 1.4, 1.8]], 11, ['*', 1.5 * k, ['case', ['==', ['get', 'kv'], 345], 2.6, ['==', ['get', 'feeder'], true], 1.4, 1.8]]] as never
 const LOAD_COLOR = ['step', ['get', 'pct'], '#5b7cc0', 60, '#e3c55b', 80, '#e8893a', 95, '#db4a52'] as never
+
+// Where the framed asset should sit: left of the side drawer on desktop, above the bottom sheet on a phone.
+const sheetOffset = (): [number, number] => (isPhone() ? [0, -Math.round(window.innerHeight * 0.2)] : [-190, 0])
 
 type Tip = { x: number; y: number; kind: 'site' | 'plant' | 'line' | 'sub'; id: string } | null
 interface MarkerRec { kind: 'site' | 'plant'; id: string; el: HTMLDivElement; marker: maplibregl.Marker; minZoom: number }
@@ -41,6 +45,7 @@ export function MapView() {
 
   // ---- map + geo bootstrap
   useEffect(() => {
+    const lowPower = isPhone() // small, battery-bound screens: cap the map's pixel ratio
     maplibregl.setWorkerUrl(workerUrl)
     const protocol = new Protocol()
     for (const id of ['conus', 'lite', 'detail'] as const) protocol.add(new PMTiles(new ArchiveSource(id)))
@@ -48,7 +53,7 @@ export function MapView() {
     startTileLoads() // conus first, then lite, then detail on desktop; the map never waits on the larger two
     const map = new maplibregl.Map({
       container: box.current!, style: baseStyle(origin, TILE_URLS), center: CAMERAS.conus.center, zoom: CAMERAS.conus.zoom,
-      minZoom: 2.6, maxZoom: 12, dragRotate: false, pitchWithRotate: false, attributionControl: { compact: true }, fadeDuration: 150,
+      minZoom: 2.6, maxZoom: 12, pixelRatio: lowPower ? Math.min(window.devicePixelRatio || 1, 2) : undefined, dragRotate: false, pitchWithRotate: false, attributionControl: { compact: true }, fadeDuration: 150,
     })
     map.touchZoomRotate.disableRotation()
     mapRef.current = map
@@ -164,9 +169,14 @@ export function MapView() {
     }
     update()
     const iv = window.setInterval(update, 250)
+    let lastMove = 0
+    map.on('movestart', () => { lastMove = performance.now() })
+    map.on('move', () => { lastMove = performance.now() })
     const anim = (now: number) => {
-      if (now - lastFast > 55) { lastFast = now; dFast = (dFast + 1) % DASH.length; if (map.getLayer('flow-fast')) map.setPaintProperty('flow-fast', 'line-dasharray', DASH[dFast]) }
-      if (now - lastSlow > 140) { lastSlow = now; dSlow = (dSlow + 1) % DASH.length; if (map.getLayer('flow-slow')) map.setPaintProperty('flow-slow', 'line-dasharray', DASH[dSlow]) }
+      // on phones the flow dashes step at half rate whenever the camera has been still for a moment
+      const calm = isPhone() && now - lastMove > 1500 ? 2 : 1
+      if (now - lastFast > 55 * calm) { lastFast = now; dFast = (dFast + 1) % DASH.length; if (map.getLayer('flow-fast')) map.setPaintProperty('flow-fast', 'line-dasharray', DASH[dFast]) }
+      if (now - lastSlow > 140 * calm) { lastSlow = now; dSlow = (dSlow + 1) % DASH.length; if (map.getLayer('flow-slow')) map.setPaintProperty('flow-slow', 'line-dasharray', DASH[dSlow]) }
       raf = requestAnimationFrame(anim)
     }
     raf = requestAnimationFrame(anim)
@@ -207,12 +217,12 @@ export function MapView() {
     }
     if (c.openSite) {
       const s = FLEET.find((x) => x.id === c.openSite)
-      if (s) map.flyTo({ center: s.lngLat, zoom: Math.max(map.getZoom(), 10.1), offset: [-190, 0], duration: 2400, essential: true, easing: ease })
+      if (s) map.flyTo({ center: s.lngLat, zoom: Math.max(map.getZoom(), 10.1), offset: sheetOffset(), duration: 2400, essential: true, easing: ease })
     }
     if (c.focusSubs?.length) {
       const b = new maplibregl.LngLatBounds()
       c.focusSubs.forEach((id) => b.extend(SUBSTATIONS.find((s) => s.id === id)!.lngLat))
-      map.fitBounds(b, { padding: { top: 120, bottom: 80, left: 80, right: 420 }, maxZoom: 10.4, duration: 2400, essential: true })
+      map.fitBounds(b, { padding: isPhone() ? { top: 130, bottom: 380, left: 30, right: 30 } : { top: 120, bottom: 80, left: 80, right: 420 }, maxZoom: 10.4, duration: 2400, essential: true })
     }
   }, [camera, ready])
 
@@ -224,7 +234,7 @@ export function MapView() {
       : drawer.kind === 'sub' ? SUBSTATIONS.find((s) => s.id === drawer.id)?.lngLat
         : drawer.kind === 'plant' ? (geo?.nodes.get(drawer.id) as [number, number] | undefined)
           : (() => { const l = LINES.find((x) => x.id === drawer.id); const a = l && geo?.nodes.get(l.a), b = l && geo?.nodes.get(l.b); return a && b ? ([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] as [number, number]) : undefined })()
-    if (at) map.easeTo({ center: at, offset: [-190, 0], zoom: Math.max(map.getZoom(), drawer.kind === 'plant' ? 9 : 9.6), duration: 900 })
+    if (at) map.easeTo({ center: at, offset: sheetOffset(), zoom: Math.max(map.getZoom(), drawer.kind === 'plant' ? 9 : 9.6), duration: 900 })
   }, [drawer, ready, geo])
 
   const plantById = useMemo(() => new Map(geo?.plants.features.map((f) => [f.properties.id, f.properties]) ?? []), [geo])

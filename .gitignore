@@ -12,3 +12,5 @@ dist/
 
 # Python virtual environment
 .venv/
+.cache/
+.wrangler/

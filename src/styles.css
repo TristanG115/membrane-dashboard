@@ -214,3 +214,8 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2
 @media (max-width: 1500px) { .dispatch { grid-template-columns: 250px minmax(0, 1fr) 280px; } }
 
 .toasts.right { left: auto; right: 12px; top: 12px; bottom: auto; flex-direction: column; }
+
+/* basemap loading state: appears only while the camera is ahead of the tile download */
+.tilechip { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 9px; padding: 5px 11px; border-radius: 5px; background: rgba(23, 34, 54, 0.92); border: 1px solid var(--line-2); color: var(--text-dim); font-family: var(--cond); font-size: 12.5px; pointer-events: none; }
+.tilechip-bar { width: 54px; height: 3px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+.tilechip-bar i { display: block; height: 100%; background: var(--flex); transition: width 0.25s ease; }

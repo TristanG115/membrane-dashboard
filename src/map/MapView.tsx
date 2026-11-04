@@ -1,7 +1,6 @@
 import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource, MapMouseEvent } from 'maplibre-gl'
 import { PMTiles, Protocol } from 'pmtiles'
-import { WholeFileSource } from './wholeFileSource'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -11,7 +10,9 @@ import { LAYER_DEFS, clock, useStore } from '../store'
 import { PlantGlyph, SiteGlyph, FUEL_META } from './glyphs'
 import { loadGeo, type GeoData, type PlantProps } from './geo'
 import { allLineLoading, hexValues, lineLoading, plantPct, subHeadroomRatio } from './live'
-import { baseStyle } from './style'
+import { baseStyle, layerZoomRange, lineLayerIds, type Src } from './style'
+import { ArchiveSource, loadArchive, startTileLoads, subscribeTiles, tileStatus, TILE_URLS } from './tiles'
+import { TileChip } from './TileChip'
 
 const origin = `${window.location.origin}${import.meta.env.BASE_URL}`
 const DASH = [[0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0], [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5]]
@@ -42,10 +43,11 @@ export function MapView() {
   useEffect(() => {
     maplibregl.setWorkerUrl(workerUrl)
     const protocol = new Protocol()
-    for (const f of ['conus', 'inoh']) { const u = `${origin}tiles/${f}.pmtiles`; protocol.add(new PMTiles(new WholeFileSource(u))) }
+    for (const id of ['conus', 'lite', 'detail'] as const) protocol.add(new PMTiles(new ArchiveSource(id)))
     maplibregl.addProtocol('pmtiles', protocol.tile)
+    startTileLoads() // conus first, then lite, then detail on desktop; the map never waits on the larger two
     const map = new maplibregl.Map({
-      container: box.current!, style: baseStyle(origin), center: CAMERAS.conus.center, zoom: CAMERAS.conus.zoom,
+      container: box.current!, style: baseStyle(origin, TILE_URLS), center: CAMERAS.conus.center, zoom: CAMERAS.conus.zoom,
       minZoom: 2.6, maxZoom: 12, dragRotate: false, pitchWithRotate: false, attributionControl: { compact: true }, fadeDuration: 150,
     })
     map.touchZoomRotate.disableRotation()
@@ -54,7 +56,24 @@ export function MapView() {
     loadGeo().then(setGeo)
     const ro = new ResizeObserver(() => map.resize())
     ro.observe(box.current!)
-    return () => { ro.disconnect(); map.remove(); maplibregl.removeProtocol('pmtiles'); mapRef.current = null }
+    // Hand lines/labels over to the finer archive as soon as it has loaded, and pull detail in once the user zooms past z10.
+    let last = ''
+    const handover = () => {
+      const st = tileStatus(), lite = st.lite.state === 'ready', detail = st.detail.state === 'ready'
+      if (last === `${lite}${detail}`) return // progress ticks arrive many times a second; only readiness matters here
+      last = `${lite}${detail}`
+      for (const src of ['conus', 'lite', 'detail'] as Src[]) {
+        for (const lid of lineLayerIds(src)) {
+          if (!map.getLayer(lid)) continue
+          const [lo, hi] = layerZoomRange(src, lid.slice(src.length + 1), lite, detail)
+          map.setLayerZoomRange(lid, lo, hi)
+        }
+      }
+    }
+    const unsub = subscribeTiles(handover)
+    map.once('load', () => { last = ''; handover() })
+    map.on('zoom', () => { if (map.getZoom() >= 10 && tileStatus().detail.state === 'idle') loadArchive('detail').catch(() => undefined) })
+    return () => { unsub(); ro.disconnect(); map.remove(); maplibregl.removeProtocol('pmtiles'); mapRef.current = null }
   }, [])
 
   useEffect(() => { if (tab === 'map') requestAnimationFrame(() => mapRef.current?.resize()) }, [tab])
@@ -220,6 +239,7 @@ export function MapView() {
             : <PlantMarker key={r.id} p={plantById.get(r.id)!} onHover={(p) => setTip(p ? { ...p, kind: 'plant', id: r.id } : null)} onClick={() => openDrawer({ kind: 'plant', id: r.id })} />,
           r.el, r.id),
       )}
+      <TileChip map={mapRef} />
       {tip && <TipView tip={tip} plants={plantById} loading={loadingRef.current} />}
     </div>
   )

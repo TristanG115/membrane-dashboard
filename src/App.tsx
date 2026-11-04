@@ -1,12 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { About } from './components/About'
 import { Toasts } from './components/Toasts'
 import { TopBar } from './components/TopBar'
 import { Transport } from './components/Transport'
 import { useKeys } from './lib/keys'
-import { DispatchTab } from './tabs/DispatchTab'
 import { MapTab } from './tabs/MapTab'
 import { Placeholder } from './tabs/Placeholder'
+
+// Tabs other than the map load on first visit, which keeps the first download small on cellular.
+const DispatchTab = lazy(() => import('./tabs/DispatchTab').then((m) => ({ default: m.DispatchTab })))
+const EconomicsTab = lazy(() => import('./tabs/EconomicsTab').then((m) => ({ default: m.EconomicsTab })))
+const AgreementTab = lazy(() => import('./tabs/AgreementTab').then((m) => ({ default: m.AgreementTab })))
+const ForecasterTab = lazy(() => import('./tabs/ForecasterTab').then((m) => ({ default: m.ForecasterTab })))
 import { startClock, TABS, urlParams, useStore } from './store'
 
 export default function App() {
@@ -48,7 +53,12 @@ export default function App() {
       <TopBar />
       <main className="main">
         <div style={{ position: 'absolute', inset: 0, display: tab === 'map' ? 'block' : 'none' }}><MapTab /></div>
-        {tab === 'dispatch' && <DispatchTab />}
+        <Suspense fallback={<div className="page dim" style={{ display: 'grid', placeItems: 'center' }}>Loading view</div>}>
+          {tab === 'dispatch' && <DispatchTab />}
+          {tab === 'economics' && <EconomicsTab />}
+          {tab === 'agreement' && <AgreementTab />}
+          {tab === 'forecaster' && <ForecasterTab />}
+        </Suspense>
         {tab !== 'map' && !ready && <Placeholder tab={tab} />}
         <Toasts corner={tab === 'map' ? 'left' : 'right'} />
       </main>

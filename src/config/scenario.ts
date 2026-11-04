@@ -121,6 +121,77 @@ export const CAMERAS = {
   metro: { center: [-86.25, 39.78] as [number, number], zoom: 9.55, pitch: 0, bearing: 0 },
 }
 
+// ---------------------------------------------------------------- economics (140 MW case)
+// Every input is editable in the Economics tab. `kind` says where the default comes from:
+//   deck  = the team's deck / canonical case      cited = a public source (see `source`, `url`)      team = team assumption, not a sourced figure
+export type AssumptionKind = 'deck' | 'cited' | 'team'
+export interface Assumption {
+  id: string; label: string; unit: string; value: number; min: number; max: number; step: number
+  group: 'capital' | 'operations' | 'benefits' | 'market' | 'contract' | 'guardrail'
+  kind: AssumptionKind; source: string; url?: string
+}
+// Each entry was read in a public source on 2026-11-04. Secondary sources are described as such.
+export const SOURCES = {
+  cbre: { label: 'CBRE average asking rate $184/kW-month for 250-500 kW deployments, H1 2025 (via Data Center Knowledge). CBRE H2 2025 is reported near $196.', url: 'https://www.datacenterknowledge.com/colocation/power-not-space-the-colocation-battleground-in-2026' },
+  pra: { label: 'MISO 2026/27 Planning Resource Auction: Zones 1-7 summer $424.30/MW-day, annualized Zone 6 average $126.19/MW-day (via Enel North America summary of MISO results)', url: 'https://www.enelnorthamerica.com/insights/blogs/miso-2026-2027-capacity-auction-results' },
+  hea: { label: 'Indiana HEA 1007 (2025): large-load customers must cover at least 80% of costs reasonably allocable to them; the IURC found the Google contract meets it (press accounts, order not read)', url: 'https://mgrid.org/2026/10/10/indiana-approves-aess-plan-for-googles-390-mw-monrovia-data-center-and-puts-73-8-million-of-upgrades-in-rate-base/' },
+  duke: { label: 'Duke Nicholas Institute, "Rethinking Load Growth" (Feb 2025): about 85 curtailment hours/yr at the 0.25% case (via Facilities Dive)', url: 'https://www.facilitiesdive.com/news/us-grid-headroom-flexible-load-data-center-ai-ev-duke-report/739938/' },
+  google: { label: 'IURC approval, Cause No. 46394 (7 Oct 2026): 390 MW Monrovia site, $737.3M project, $73.8M of network upgrades in rate base, contract of at least 15 years (press accounts)', url: 'https://mgrid.org/2026/10/10/indiana-approves-aess-plan-for-googles-390-mw-monrovia-data-center-and-puts-73-8-million-of-upgrades-in-rate-base/' },
+} as const
+
+export const ECON: Assumption[] = [
+  { id: 'batteryGrossM', label: 'Battery, gross installed cost', unit: '$M', value: 48, min: 30, max: 70, step: 0.5, group: 'capital', kind: 'deck', source: 'Deck: 40 MW / 160 MWh, $300/kWh installed' },
+  { id: 'itcRate', label: 'Section 48E investment tax credit', unit: '%', value: 30, min: 0, max: 50, step: 1, group: 'capital', kind: 'deck', source: 'Deck: $14.4M on $48M gross' },
+  { id: 'itcRealization', label: 'ITC realized (100% = owner uses it; a transfer sale prices below par)', unit: '%', value: 100, min: 80, max: 100, step: 1, group: 'capital', kind: 'team', source: 'Team assumption. Lower it to model selling the credit through transferability.' },
+  { id: 'integrationM', label: 'Membrane integration', unit: '$M', value: 2.4, min: 0.5, max: 6, step: 0.1, group: 'capital', kind: 'deck', source: 'Deck' },
+  { id: 'licenseK', label: 'Membrane software license', unit: '$k/yr', value: 360, min: 0, max: 900, step: 10, group: 'operations', kind: 'deck', source: 'Deck: about $360k/yr' },
+  { id: 'eventCostK', label: 'Deferred compute per 4-hour event', unit: '$k', value: 60, min: 0, max: 150, step: 5, group: 'operations', kind: 'deck', source: 'Deck: about $50-70k per 4-hour event' },
+  { id: 'eventsPerYr', label: 'Curtailment events per year', unit: 'events', value: 21, min: 0, max: 60, step: 1, group: 'operations', kind: 'cited', source: '85 stress hours per year (Duke 2025, 0.25% case) divided by 4-hour events, rounded', url: SOURCES.duke.url },
+  { id: 'omPct', label: 'Battery O&M, % of gross cost per year', unit: '%', value: 2.5, min: 0, max: 5, step: 0.1, group: 'operations', kind: 'team', source: 'Team assumption' },
+  { id: 'interimYears', label: 'Interim-service term (curtailment possible)', unit: 'years', value: 5, min: 1, max: 7, step: 1, group: 'contract', kind: 'deck', source: 'Deck default 5 years. SPP CHILLS allows up to 7.' },
+  { id: 'horizonYears', label: 'Analysis horizon and AES contract life', unit: 'years', value: 15, min: 5, max: 20, step: 1, group: 'contract', kind: 'team', source: 'Team assumption. The Cause No. 46394 contract is at least 15 years.', url: SOURCES.google.url },
+  { id: 'discountPct', label: 'Discount rate', unit: '%', value: 10, min: 4, max: 18, step: 0.5, group: 'contract', kind: 'team', source: 'Team assumption (blended cost of capital)' },
+  { id: 'tollPerKWMonth', label: 'Storage-as-a-service payment (AES-owned model)', unit: '$/kW-month', value: 12, min: 4, max: 25, step: 0.25, group: 'contract', kind: 'team', source: 'Team assumption, sized so AES earns a contracted return. Not a quoted market price.' },
+  { id: 'monthsEarly', label: 'Months energized earlier than firm-only service', unit: 'months', value: 24, min: 0, max: 60, step: 1, group: 'benefits', kind: 'team', source: 'Team assumption. The break-even chart shows how few months are needed.' },
+  { id: 'itMW', label: 'IT load energized early', unit: 'MW', value: 140, min: 0, max: 140, step: 5, group: 'benefits', kind: 'deck', source: 'Deck: 140 MW request' },
+  { id: 'revPerMWMonthK', label: 'Revenue per MW-month of IT load', unit: '$k', value: 130, min: 60, max: 220, step: 5, group: 'benefits', kind: 'cited', source: 'Team default, set below CBRE asking rates ($184/kW-month H1 2025, 250-500 kW blocks) because hyperscale leases price lower.', url: SOURCES.cbre.url },
+  { id: 'marginPct', label: 'Operating margin on that revenue (after power and wires bills)', unit: '%', value: 45, min: 20, max: 70, step: 1, group: 'benefits', kind: 'team', source: 'Team assumption' },
+  { id: 'avoidedGenM', label: 'Avoided on-site gas or diesel while energized early', unit: '$M/yr', value: 1.5, min: 0, max: 10, step: 0.1, group: 'benefits', kind: 'team', source: 'Team assumption' },
+  { id: 'wiresPerMWh', label: 'AES Indiana wires and energy margin', unit: '$/MWh', value: 14, min: 0, max: 40, step: 1, group: 'benefits', kind: 'team', source: 'Team assumption' },
+  { id: 'loadFactorPct', label: 'Data center load factor', unit: '%', value: 75, min: 40, max: 95, step: 1, group: 'benefits', kind: 'team', source: 'Team assumption' },
+  { id: 'dividendPct', label: 'Utilization dividend: share of AES Indiana margin on early load credited to ratepayers', unit: '%', value: 25, min: 0, max: 100, step: 5, group: 'benefits', kind: 'team', source: 'Team proposal for the pilot' },
+  { id: 'arbKWYr', label: 'Energy arbitrage', unit: '$/kW-yr', value: 30, min: 0, max: 80, step: 1, group: 'market', kind: 'team', source: 'Team assumption. Potential, subject to MISO/IURC rules.' },
+  { id: 'accredPct', label: 'Capacity accreditation of the battery', unit: '% of MW', value: 60, min: 0, max: 100, step: 5, group: 'market', kind: 'team', source: 'Team assumption. Potential, subject to MISO/IURC rules.' },
+  { id: 'praPerMWDay', label: 'MISO capacity price, annualized', unit: '$/MW-day', value: 126.19, min: 0, max: 700, step: 1, group: 'market', kind: 'cited', source: SOURCES.pra.label, url: SOURCES.pra.url },
+  { id: 'ancKWYr', label: 'Ancillary services', unit: '$/kW-yr', value: 6, min: 0, max: 30, step: 1, group: 'market', kind: 'team', source: 'Team assumption. Potential, subject to MISO/IURC rules.' },
+  { id: 'aesSharePct', label: 'Battery market revenue kept by AES (AES-owned model)', unit: '%', value: 50, min: 0, max: 100, step: 5, group: 'market', kind: 'team', source: 'Team assumption. The rest is credited to the data center.' },
+  { id: 'upgradeM', label: 'Utility interconnection and network upgrades allocable to the site', unit: '$M', value: 24, min: 0, max: 150, step: 1, group: 'guardrail', kind: 'team', source: 'Team assumption, for illustration' },
+  { id: 'dcUpgradeSharePct', label: 'Share of those upgrades the data center pays directly', unit: '%', value: 90, min: 0, max: 100, step: 1, group: 'guardrail', kind: 'cited', source: 'Cause No. 46394 put $73.8M of $737.3M (about 10%) in rate base', url: SOURCES.google.url },
+  { id: 'heaThresholdPct', label: 'HEA 1007 cost-coverage threshold', unit: '%', value: 80, min: 0, max: 100, step: 1, group: 'guardrail', kind: 'cited', source: SOURCES.hea.label, url: SOURCES.hea.url },
+]
+export const ECON_DEFAULTS: Record<string, number> = Object.fromEntries(ECON.map((a) => [a.id, a.value]))
+
+// ---------------------------------------------------------------- service agreement & reliability
+export interface EvidenceItem { id: string; who: string; what: string; when: string; caveat: string; source: string; url: string }
+// Each item was read in a public source on 2026-11-04.
+export const EVIDENCE: EvidenceItem[] = [
+  { id: 'google-iandm-tva', who: 'Google with Indiana Michigan Power and TVA', what: 'First demand-response agreements to pause or reschedule machine-learning workloads when the grid is stressed. Search, Maps and other essential services are not affected.', when: 'Announced 4 Aug 2025', caveat: 'The I&M piece covers the Fort Wayne site and went to the IURC. We did not confirm its final approval.', source: 'The Register', url: 'https://www.theregister.com/2025/08/04/google_ai_datacenter_grid/' },
+  { id: 'google-1gw', who: 'Google with I&M, TVA, Entergy Arkansas, Minnesota Power and DTE Energy', what: 'Google reports 1 GW of demand response written into long-term utility contracts so data centers connect faster. It can "limit or shift a portion of machine learning workloads".', when: '19 Mar 2026', caveat: 'Google says there are limits to how flexible a given data center can be, and the capability is only available at certain locations. 1 GW is contracted capacity, not one dispatch.', source: 'Google blog', url: 'https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/demand-response-data-center-milestone/' },
+  { id: 'emerald-phoenix', who: 'Emerald AI with Nvidia, Oracle Cloud, Databricks and Salt River Project (EPRI DCFlex)', what: 'A 256-GPU cluster in Oracle’s Phoenix region cut power 25% for three hours, after a 15-minute ramp-down, during an SRP system peak, and met its AI service targets.', when: '1 and 3 May 2025', caveat: 'One cluster, two events. The paper is a 2025 arXiv preprint.', source: 'Nvidia blog', url: 'https://blogs.nvidia.com/blog/ai-factories/' },
+  { id: 'spp-chills', who: 'Southwest Power Pool (CHILLS)', what: 'FERC approved non-firm transmission service for large loads for up to seven years while they obtain firm service. SPP can curtail it when the system is constrained or in an emergency.', when: 'FERC acceptance 5 Jun 2026', caveat: 'The tariff sets no cap on how often or how long SPP can curtail. Our contract builder adds that cap.', source: 'Utility Dive', url: 'https://www.utilitydive.com/news/ferc-spp-chills-large-load-transmission-service/822211/' },
+  { id: 'pjm-nonfirm', who: 'PJM (FERC directive)', what: 'FERC directed PJM to create firm and non-firm contract-demand services, plus an interim non-firm service until network upgrades finish.', when: 'Dec 2025 order, 18 Jun 2026 follow-up', caveat: 'FERC found PJM’s first compliance proposal insufficiently flexible and ordered a further filing.', source: 'Mondaq legal summary', url: 'https://webiis08.mondaq.com/unitedstates/energy-law/1730084/ferc-directs-pjm-to-facilitate-faster-integration-of-large-electric-loads-including-data-centers' },
+  { id: 'miso-flex', who: 'MISO (FERC directive)', what: 'FERC directed MISO to add a flexible transmission service for large loads willing to limit their use of the system. MISO is also weighing a staged "firm service step-up" while upgrades finish.', when: '2026', caveat: 'We could not find the name "FLITS" in public sources, so this console says "MISO’s flexible large-load service". Filing status not confirmed.', source: 'Akin Gump summary', url: 'https://www.akingump.com/en/insights/blogs/speaking-energy/ferc-directs-midcontinent-independent-system-operator-to-revise-tariff-to-expedite-data-center-development' },
+]
+
+export interface ContractDefaults { termYears: number; maxTermYears: number; firmMW: number[]; btmFirmEquivMW: number[]; curtailCapHours: number; noticeHours: number }
+// Year-by-year utility firm MW as upgrades finish, plus firm-equivalent MW from an optional behind-the-meter build-out (solar and more storage).
+export const CONTRACT: ContractDefaults = {
+  termYears: 5, maxTermYears: 7,
+  firmMW: [90, 90, 105, 120, 130, 140, 140, 140, 140, 140],
+  btmFirmEquivMW: [0, 0, 5, 10, 5, 0, 0, 0, 0, 0],
+  curtailCapHours: 100, noticeHours: 24,
+}
+
 // ---------------------------------------------------------------- fixed demo ledger key (labeled "demo key" in the UI)
 // Filled in at milestone 9. Kept here so the key never drifts from the config.
 export const DEMO_KEY_LABEL = 'demo key'

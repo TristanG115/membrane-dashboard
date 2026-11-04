@@ -3,6 +3,7 @@ import { FLEET } from '../config/scenario'
 import { DEFAULT_SCENARIO, SCENARIOS, getTimeline } from '../sim/registry'
 import { buildTimeline } from '../sim/engine'
 import { fmtClock, parseTime } from '../sim/time'
+import { defaultInputs, type Inputs, type Ownership } from '../economics/model'
 import type { CameraCue, Severity, TabId, Timeline } from '../sim/types'
 
 export type Role = 'operator' | 'regulator' | 'public'
@@ -12,8 +13,8 @@ export const SPEEDS = [1, 60, 300, 900] as const
 export const TABS: { id: TabId; label: string; short: string; ready: boolean }[] = [
   { id: 'map', label: 'Grid Operations', short: 'Grid Ops', ready: true },
   { id: 'dispatch', label: 'Site Dispatch', short: 'Dispatch', ready: true },
-  { id: 'agreement', label: 'Service Agreement', short: 'Agreement', ready: false },
-  { id: 'economics', label: 'Economics', short: 'Economics', ready: false },
+  { id: 'agreement', label: 'Service Agreement', short: 'Agreement', ready: true },
+  { id: 'economics', label: 'Economics', short: 'Economics', ready: true },
   { id: 'forecaster', label: 'Headroom Forecaster', short: 'Forecaster', ready: false },
   { id: 'scorecard', label: 'Pilot Scorecard', short: 'Scorecard', ready: false },
   { id: 'markets', label: 'Market Models', short: 'Markets', ready: false },
@@ -52,6 +53,11 @@ interface UIState {
   toasts: Toast[]
   camera: { seq: number; cue: CameraCue }
   injected: boolean
+  econ: Inputs
+  ownership: Exclude<Ownership, 'utility'>
+  setEcon: (patch: Inputs) => void
+  resetEcon: () => void
+  setOwnership: (o: Exclude<Ownership, 'utility'>) => void
   injectLoss: (siteId: string, durationS?: number) => void
   clearInjected: () => void
   setScenario: (id: string, t?: number) => void
@@ -112,6 +118,11 @@ export const useStore = create<UIState>((set, get) => ({
   toasts: [],
   camera: { seq: 0, cue: {} },
   injected: false,
+  econ: defaultInputs(),
+  ownership: 'developer',
+  setEcon: (patch) => set({ econ: { ...get().econ, ...patch } }),
+  resetEcon: () => set({ econ: defaultInputs() }),
+  setOwnership: (ownership) => set({ ownership }),
 
   // Re-integrates the day with an extra link-loss window starting a few seconds from now.
   injectLoss: (siteId, durationS = 300) => {

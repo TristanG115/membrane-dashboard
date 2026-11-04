@@ -50,7 +50,7 @@ export default function App() {
         <div style={{ position: 'absolute', inset: 0, display: tab === 'map' ? 'block' : 'none' }}><MapTab /></div>
         {tab === 'dispatch' && <DispatchTab />}
         {tab !== 'map' && !ready && <Placeholder tab={tab} />}
-        <Toasts />
+        <Toasts corner={tab === 'map' ? 'left' : 'right'} />
       </main>
       <Transport />
       <About />

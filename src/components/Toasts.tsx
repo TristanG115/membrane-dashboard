@@ -1,10 +1,10 @@
 import { useStore } from '../store'
 
-export function Toasts() {
+export function Toasts({ corner = 'left' }: { corner?: 'left' | 'right' }) {
   const toasts = useStore((s) => s.toasts)
   const dismiss = useStore((s) => s.dismissToast)
   return (
-    <div className="toasts" role="status" aria-live="polite">
+    <div className={`toasts ${corner}`} role="status" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className={`toast ${t.severity}`} onClick={() => dismiss(t.id)}>
           <b>{t.title}</b>

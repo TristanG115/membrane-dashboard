@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { FLEET } from '../config/scenario'
 import { DEFAULT_SCENARIO, SCENARIOS, getTimeline } from '../sim/registry'
-import { parseTime } from '../sim/time'
+import { buildTimeline } from '../sim/engine'
+import { fmtClock, parseTime } from '../sim/time'
 import type { CameraCue, Severity, TabId, Timeline } from '../sim/types'
 
 export type Role = 'operator' | 'regulator' | 'public'
@@ -50,6 +51,9 @@ interface UIState {
   about: boolean
   toasts: Toast[]
   camera: { seq: number; cue: CameraCue }
+  injected: boolean
+  injectLoss: (siteId: string, durationS?: number) => void
+  clearInjected: () => void
   setScenario: (id: string, t?: number) => void
   seek: (t: number, applyCue?: boolean) => void
   setSpeed: (s: number) => void
@@ -107,12 +111,28 @@ export const useStore = create<UIState>((set, get) => ({
   about: false,
   toasts: [],
   camera: { seq: 0, cue: {} },
+  injected: false,
+
+  // Re-integrates the day with an extra link-loss window starting a few seconds from now.
+  injectLoss: (siteId, durationS = 300) => {
+    const s0 = get()
+    const from = Math.floor(clock.t) + 5
+    const base = s0.tl.def
+    const def = {
+      ...base,
+      name: `${base.name} + simulated telemetry loss`,
+      linkLoss: [...(base.linkLoss ?? []), { site: siteId, from: fmtClock(from), to: fmtClock(from + durationS) }],
+      beats: [...base.beats, { t: fmtClock(from), title: 'Simulated telemetry loss', text: 'The Membrane link to the site dropped. The on-site controller falls back to firm on its own.', severity: 'warn' as const, phase: 'react' as const }],
+    }
+    set({ tl: buildTimeline(def), injected: true })
+  },
+  clearInjected: () => set({ tl: getTimeline(get().scenarioId), injected: false }),
 
   setScenario: (id, t) => {
     const tl = getTimeline(id)
     const nt = t ?? parseTime(tl.def.start)
     clock.t = nt
-    set({ scenarioId: id, tl, t: nt, drawer: null, toasts: [] })
+    set({ scenarioId: id, tl, t: nt, drawer: null, toasts: [], injected: false })
     get().seek(nt)
   },
   seek: (t, applyCue = true) => {

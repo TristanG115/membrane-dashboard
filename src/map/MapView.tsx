@@ -1,6 +1,7 @@
 import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource, MapMouseEvent } from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CAMERAS, FLEET, STATE_META, SUBSTATIONS, LINES } from '../config/scenario'
@@ -38,6 +39,7 @@ export function MapView() {
 
   // ---- map + geo bootstrap
   useEffect(() => {
+    maplibregl.setWorkerUrl(workerUrl)
     const protocol = new Protocol()
     maplibregl.addProtocol('pmtiles', protocol.tile)
     const map = new maplibregl.Map({
